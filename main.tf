@@ -22,3 +22,9 @@ module "tfstate" {
   source             = "./tfstate"
   gcs_backend_bucket = local.gcs_backend_bucket
 }
+
+module "soft_serve" {
+  source        = "./soft-serve"
+  project_id    = var.project_id
+  admin_ssh_key = var.admin_ssh_key
+}
