@@ -18,12 +18,12 @@ provider "google" {
   project = var.project_id
 }
 
-module "tfstate" {
-  source             = "./tfstate"
+module "tf-state" {
+  source             = "./tf-state"
   gcs_backend_bucket = local.gcs_backend_bucket
 }
 
-module "soft_serve" {
+module "soft-serve" {
   source        = "./soft-serve"
   project_id    = var.project_id
   admin_ssh_key = var.admin_ssh_key
