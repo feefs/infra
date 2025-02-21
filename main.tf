@@ -25,6 +25,5 @@ module "tf-state" {
 
 module "soft-serve" {
   source        = "./soft-serve"
-  project_id    = var.project_id
   admin_ssh_key = var.admin_ssh_key
 }

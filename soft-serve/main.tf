@@ -31,6 +31,11 @@ module "gce-container" {
   restart_policy = "Always"
 }
 
+data "google_compute_subnetwork" "default" {
+  name   = "default"
+  region = "us-west1"
+}
+
 resource "google_compute_instance" "main" {
   name         = "soft-serve"
   zone         = "us-west1-a"
@@ -41,7 +46,7 @@ resource "google_compute_instance" "main" {
     }
   }
   network_interface {
-    subnetwork = "projects/${var.project_id}/regions/us-west1/subnetworks/default"
+    subnetwork = data.google_compute_subnetwork.default.self_link
     access_config {}
   }
   metadata = {
