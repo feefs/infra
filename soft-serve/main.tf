@@ -1,3 +1,15 @@
+resource "google_artifact_registry_repository" "main" {
+  location      = "us-west1"
+  repository_id = "soft-serve-gcloud"
+  format        = "docker"
+}
+
+data "google_artifact_registry_docker_image" "main" {
+  location      = google_artifact_registry_repository.main.location
+  repository_id = google_artifact_registry_repository.main.repository_id
+  image_name    = "${google_artifact_registry_repository.main.name}:latest"
+}
+
 module "gce-container" {
   source  = "terraform-google-modules/container-vm/google"
   version = "3.2"
@@ -5,7 +17,7 @@ module "gce-container" {
   cos_image_name = "cos-stable-117-18613-164-28"
   container = {
     name  = "soft-serve"
-    image = "ghcr.io/charmbracelet/soft-serve:v0.8.2"
+    image = data.google_artifact_registry_docker_image.main.self_link
     env = [
       {
         name  = "SOFT_SERVE_INITIAL_ADMIN_KEYS",
@@ -31,7 +43,7 @@ module "gce-container" {
   restart_policy = "Always"
 }
 
-data "google_compute_subnetwork" "default" {
+data "google_compute_subnetwork" "main" {
   name   = "default"
   region = "us-west1"
 }
@@ -46,7 +58,7 @@ resource "google_compute_instance" "main" {
     }
   }
   network_interface {
-    subnetwork = data.google_compute_subnetwork.default.self_link
+    subnetwork = data.google_compute_subnetwork.main.self_link
     access_config {}
   }
   metadata = {
