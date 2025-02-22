@@ -43,6 +43,19 @@ module "gce-container" {
   restart_policy = "Always"
 }
 
+resource "google_service_account" "main" {
+  account_id   = "soft-serve"
+  display_name = "Soft Serve service account"
+}
+
+data "google_project" "main" {}
+
+resource "google_project_iam_member" "main" {
+  project = data.google_project.main.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.main.email}"
+}
+
 data "google_compute_subnetwork" "main" {
   name   = "default"
   region = "us-west1"
@@ -56,6 +69,10 @@ resource "google_compute_instance" "main" {
     initialize_params {
       image = module.gce-container.source_image
     }
+  }
+  service_account {
+    email  = google_service_account.main.email
+    scopes = ["cloud-platform"]
   }
   network_interface {
     subnetwork = data.google_compute_subnetwork.main.self_link
