@@ -12,7 +12,7 @@ log:
   # Should be described in Golang's time format.
   time_format: "2006-01-02 15:04:05"
   # Path to the log file. Leave empty to write to stderr.
-  #path: ""
+  # path: ""
 
 # The SSH server configuration.
 ssh:
@@ -36,9 +36,9 @@ ssh:
   idle_timeout: 600
 
 # The Git daemon configuration.
-# git:
-#   # Enable the Git daemon.
-#   enabled: true
+git:
+  # Enable the Git daemon.
+  enabled: false
 #   # The address on which the Git daemon will listen.
 #   listen_addr: ":9418"
 #   # The public URL of the Git daemon server.
@@ -53,9 +53,9 @@ ssh:
 #   max_connections: 32
 
 # The HTTP server configuration.
-# http:
-#   # Enable the HTTP server.
-#   enabled: true
+http:
+  # Enable the HTTP server.
+  enabled: false
 #   # The address on which the HTTP server will listen.
 #   listen_addr: ":23232"
 #   # The path to the TLS private key.
@@ -68,9 +68,9 @@ ssh:
 #   public_url: "http://localhost:23232"
 
 # The stats server configuration.
-# stats:
-#   # Enable the stats server.
-#   enabled: true
+stats:
+  # Enable the stats server.
+  enabled: false
 #   # The address on which the stats server will listen.
 #   listen_addr: "localhost:23233"
 
@@ -85,15 +85,15 @@ db:
   data_source: "soft-serve.db?_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 
 # Git LFS configuration.
-# lfs:
-#   # Enable Git LFS.
-#   enabled: true
+lfs:
+  # Enable Git LFS.
+  enabled: false
 #   # Enable Git SSH transfer.
 #   ssh_enabled: false
 
 # Cron job configuration
-# jobs:
-#   mirror_pull: "@every 10m"
+jobs:
+  mirror_pull: "@every 10m"
 
 # Additional admin keys.
 # initial_admin_keys:
