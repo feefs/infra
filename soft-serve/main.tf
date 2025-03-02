@@ -76,7 +76,9 @@ resource "google_compute_instance" "main" {
   }
   network_interface {
     subnetwork = data.google_compute_subnetwork.main.self_link
-    access_config {}
+    access_config {
+      nat_ip = google_compute_address.main.address
+    }
   }
   metadata = {
     gce-container-declaration = module.gce-container.metadata_value
@@ -84,4 +86,10 @@ resource "google_compute_instance" "main" {
   labels = {
     container-vm = module.gce-container.vm_container_label
   }
+}
+
+resource "google_compute_address" "main" {
+  name         = "soft-serve-ip"
+  region       = "us-west1"
+  address_type = "EXTERNAL"
 }
