@@ -56,6 +56,11 @@ resource "google_project_iam_member" "main" {
   member  = "serviceAccount:${google_service_account.main.email}"
 }
 
+module "startup-scripts" {
+  source  = "terraform-google-modules/startup-scripts/google"
+  version = "2.0"
+}
+
 data "google_compute_subnetwork" "main" {
   name   = "default"
   region = "us-west1"
@@ -81,6 +86,8 @@ resource "google_compute_instance" "main" {
     }
   }
   metadata = {
+    startup-script            = module.startup-scripts.content
+    startup-script-custom     = file("${path.module}/startup-script")
     gce-container-declaration = module.gce-container.metadata_value
   }
   labels = {
