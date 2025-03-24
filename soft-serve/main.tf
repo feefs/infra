@@ -93,3 +93,14 @@ resource "google_compute_address" "main" {
   region       = "us-west1"
   address_type = "EXTERNAL"
 }
+
+resource "google_compute_firewall" "main" {
+  name          = "allow-soft-serve-ssh"
+  network       = data.google_compute_subnetwork.main.name
+  direction     = "INGRESS"
+  source_ranges = ["0.0.0.0/0"]
+  allow {
+    protocol = "tcp"
+    ports    = ["23231"]
+  }
+}
