@@ -66,6 +66,12 @@ data "google_compute_subnetwork" "main" {
   region = "us-west1"
 }
 
+resource "google_compute_address" "main" {
+  name         = "soft-serve-ip"
+  region       = "us-west1"
+  address_type = "EXTERNAL"
+}
+
 resource "google_compute_instance" "main" {
   name         = "soft-serve"
   zone         = "us-west1-a"
@@ -93,12 +99,6 @@ resource "google_compute_instance" "main" {
   labels = {
     container-vm = module.gce-container.vm_container_label
   }
-}
-
-resource "google_compute_address" "main" {
-  name         = "soft-serve-ip"
-  region       = "us-west1"
-  address_type = "EXTERNAL"
 }
 
 resource "google_compute_firewall" "main" {

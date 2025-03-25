@@ -9,3 +9,7 @@ output "image_name" {
     google_artifact_registry_repository.main.name
   ])
 }
+
+output "static_ip_address" {
+  value = google_compute_address.main.address
+}
