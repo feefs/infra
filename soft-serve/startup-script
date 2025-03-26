@@ -1,9 +1,11 @@
-#!/bin/bash -e
-stdlib::info 'Setting "Port 23231" in /etc/ssh/sshd_config'
-sed -Ei \
-    -e '0,/Port [0-9]+/ s/Port [0-9]+/Port 23231/' \
-    -e 't' \
-    -e '$a\\n# Soft Serve\nPort 23231' \
-    /etc/ssh/sshd_config
-stdlib::info 'Restarting sshd.service'
-systemctl restart sshd.service
+#!/bin/bash
+# stdlib functions from
+# https://github.com/terraform-google-modules/terraform-google-startup-scripts/blob/main/files/startup-script-stdlib-body.sh
+
+stdlib::run_or_die sed -Ei \
+  -e '0,/Port [0-9]+/ s/Port [0-9]+/Port 23231/' \
+  -e 't' \
+  -e '$a\\n# Soft Serve\nPort 23231' \
+  /etc/ssh/sshd_config
+
+stdlib::run_or_die systemctl restart sshd.service
