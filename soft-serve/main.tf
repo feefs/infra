@@ -1,3 +1,4 @@
+### DOCKER ###
 resource "google_artifact_registry_repository" "main" {
   location      = "us-west1"
   repository_id = "soft-serve-gcloud"
@@ -10,6 +11,21 @@ data "google_artifact_registry_docker_image" "main" {
   image_name    = "${google_artifact_registry_repository.main.name}:latest"
 }
 
+### IAM ###
+resource "google_service_account" "main" {
+  account_id   = "soft-serve"
+  display_name = "Soft Serve service account"
+}
+
+data "google_project" "main" {}
+
+resource "google_project_iam_member" "main" {
+  project = data.google_project.main.project_id
+  role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.main.email}"
+}
+
+### COMPUTE INSTANCE ###
 module "gce-container" {
   source  = "terraform-google-modules/container-vm/google"
   version = "3.2"
@@ -43,19 +59,6 @@ module "gce-container" {
   restart_policy = "Always"
 }
 
-resource "google_service_account" "main" {
-  account_id   = "soft-serve"
-  display_name = "Soft Serve service account"
-}
-
-data "google_project" "main" {}
-
-resource "google_project_iam_member" "main" {
-  project = data.google_project.main.project_id
-  role    = "roles/artifactregistry.reader"
-  member  = "serviceAccount:${google_service_account.main.email}"
-}
-
 module "startup-scripts" {
   source  = "terraform-google-modules/startup-scripts/google"
   version = "2.0"
@@ -64,6 +67,17 @@ module "startup-scripts" {
 data "google_compute_subnetwork" "main" {
   name   = "default"
   region = "us-west1"
+}
+
+resource "google_compute_firewall" "main" {
+  name          = "allow-soft-serve-ssh"
+  network       = data.google_compute_subnetwork.main.name
+  direction     = "INGRESS"
+  source_ranges = ["0.0.0.0/0"]
+  allow {
+    protocol = "tcp"
+    ports    = ["23231"]
+  }
 }
 
 resource "google_compute_address" "main" {
@@ -98,16 +112,5 @@ resource "google_compute_instance" "main" {
   }
   labels = {
     container-vm = module.gce-container.vm_container_label
-  }
-}
-
-resource "google_compute_firewall" "main" {
-  name          = "allow-soft-serve-ssh"
-  network       = data.google_compute_subnetwork.main.name
-  direction     = "INGRESS"
-  source_ranges = ["0.0.0.0/0"]
-  allow {
-    protocol = "tcp"
-    ports    = ["23231"]
   }
 }
