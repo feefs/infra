@@ -2,6 +2,6 @@ variable "project_id" {
   type = string
 }
 
-variable "admin_ssh_key" {
+variable "soft_serve_admin_ssh_key" {
   type = string
 }

@@ -25,5 +25,5 @@ module "tf-state" {
 
 module "soft-serve" {
   source        = "./soft-serve"
-  admin_ssh_key = var.admin_ssh_key
+  admin_ssh_key = var.soft_serve_admin_ssh_key
 }
