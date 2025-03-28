@@ -19,9 +19,15 @@ resource "google_service_account" "main" {
 
 data "google_project" "main" {}
 
-resource "google_project_iam_member" "main" {
+resource "google_project_iam_member" "artifact_registry_reader" {
   project = data.google_project.main.project_id
   role    = "roles/artifactregistry.reader"
+  member  = "serviceAccount:${google_service_account.main.email}"
+}
+
+resource "google_project_iam_member" "storage_object_user" {
+  project = data.google_project.main.project_id
+  role    = "roles/storage.objectUser"
   member  = "serviceAccount:${google_service_account.main.email}"
 }
 
