@@ -31,11 +31,20 @@ resource "google_project_iam_member" "storage_object_user" {
   member  = "serviceAccount:${google_service_account.main.email}"
 }
 
+### GCSFUSE BUCKET ###
+resource "google_storage_bucket" "main" {
+  name                        = "${data.google_project.main.project_id}-soft-serve-gcsfuse"
+  location                    = "us-west1"
+  uniform_bucket_level_access = true
+  hierarchical_namespace {
+    enabled = true
+  }
+}
+
 ### COMPUTE INSTANCE ###
 module "gce-container" {
-  source  = "terraform-google-modules/container-vm/google"
-  version = "3.2"
-
+  source         = "terraform-google-modules/container-vm/google"
+  version        = "3.2"
   cos_image_name = "cos-stable-117-18613-164-28"
   container = {
     name  = "soft-serve"
@@ -44,24 +53,19 @@ module "gce-container" {
       {
         name  = "SOFT_SERVE_INITIAL_ADMIN_KEYS",
         value = var.admin_ssh_key,
-      }
-    ]
-    volumeMounts = [
+      },
       {
-        mountPath = "/soft-serve"
-        readOnly  = false
+        name  = "GCSFUSE_BUCKET",
+        value = google_storage_bucket.main.name,
       }
     ]
+    # https://docs.docker.com/engine/containers/run/#runtime-privilege-and-linux-capabilities
+    securityContext = {
+      privileged = true
+    }
     stdin = true
     tty   = true
   }
-  volumes = [
-    {
-      hostPath = {
-        path = "/home/soft-serve"
-      }
-    }
-  ]
   restart_policy = "Always"
 }
 
