@@ -3,4 +3,4 @@ set -euxo pipefail
 gcsfuse --app-name=soft-serve ${GCSFUSE_BUCKET} /soft-serve
 mount | grep gcsfuse
 cp /root/config.yaml /soft-serve
-exec /usr/local/bin/soft serve
+exec /usr/local/bin/soft serve 2>&1
