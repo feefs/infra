@@ -1,7 +1,7 @@
 ### DOCKER ###
 resource "google_artifact_registry_repository" "main" {
   location      = "us-west1"
-  repository_id = "soft-serve-gcloud"
+  repository_id = "soft-serve-gcsfuse"
   format        = "docker"
 }
 
