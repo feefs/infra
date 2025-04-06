@@ -19,15 +19,14 @@ resource "google_service_account" "main" {
 
 data "google_project" "main" {}
 
-resource "google_project_iam_member" "artifact_registry_reader" {
+resource "google_project_iam_member" "main" {
+  for_each = toset([
+    "roles/artifactregistry.reader",
+    "roles/storage.objectUser",
+    "roles/logging.logWriter",
+  ])
   project = data.google_project.main.project_id
-  role    = "roles/artifactregistry.reader"
-  member  = "serviceAccount:${google_service_account.main.email}"
-}
-
-resource "google_project_iam_member" "storage_object_user" {
-  project = data.google_project.main.project_id
-  role    = "roles/storage.objectUser"
+  role    = each.key
   member  = "serviceAccount:${google_service_account.main.email}"
 }
 
@@ -119,6 +118,7 @@ resource "google_compute_instance" "main" {
     startup-script            = module.startup-scripts.content
     startup-script-custom     = file("${path.module}/startup-script")
     gce-container-declaration = module.gce-container.metadata_value
+    google-logging-enabled    = true
   }
   labels = {
     container-vm = module.gce-container.vm_container_label
