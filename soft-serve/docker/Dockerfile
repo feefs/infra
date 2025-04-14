@@ -11,6 +11,8 @@ COPY --from=builder /go/bin/soft /usr/local/bin/soft
 RUN apk add --update --no-cache ca-certificates fuse
 RUN apk add --update --no-cache git bash openssh 
 
+RUN apk add --update --no-cache parallel
+
 WORKDIR /soft-serve
 ENV SOFT_SERVE_DATA_PATH="/soft-serve"
 ENV SOFT_SERVE_INITIAL_ADMIN_KEYS=""
