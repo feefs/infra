@@ -9,4 +9,4 @@ mount | grep gcsfuse
 cp /root/config.yaml /soft-serve
 parallel --no-notice --halt soon,fail=1 --line-buffer ::: \
   "tail -f /tmp/gcsfuse-logs.log" \
-  "NO_COLOR=1 SOFT_SERVE_DEBUG=1 SOFT_SERVE_VERBOSE=1 /usr/local/bin/soft serve 2>&1"
+  "NO_COLOR=1 /usr/local/bin/soft serve 2>&1"
