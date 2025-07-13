@@ -94,6 +94,7 @@ lfs:
 # Cron job configuration
 jobs:
   mirror_pull: "@every 10m"
+  gcs_backup: "@weekly"
 
 # Additional admin keys.
 # initial_admin_keys:

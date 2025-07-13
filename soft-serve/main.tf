@@ -1,7 +1,21 @@
+data "google_project" "main" {}
+
+### IAM ###
+resource "google_service_account" "main" {
+  account_id   = "soft-serve"
+  display_name = "Soft Serve service account"
+}
+
+resource "google_project_iam_member" "main" {
+  project = data.google_project.main.project_id
+  role    = "roles/logging.logWriter"
+  member  = "serviceAccount:${google_service_account.main.email}"
+}
+
 ### DOCKER ###
 resource "google_artifact_registry_repository" "main" {
   location      = "us-west1"
-  repository_id = "soft-serve-gcsfuse"
+  repository_id = "soft-serve-gcloud"
   format        = "docker"
 }
 
@@ -11,40 +25,42 @@ data "google_artifact_registry_docker_image" "main" {
   image_name    = "${google_artifact_registry_repository.main.name}:latest"
 }
 
-### IAM ###
-resource "google_service_account" "main" {
-  account_id   = "soft-serve"
-  display_name = "Soft Serve service account"
+resource "google_artifact_registry_repository_iam_member" "main" {
+  location   = google_artifact_registry_repository.main.location
+  repository = google_artifact_registry_repository.main.name
+  role       = "roles/artifactregistry.reader"
+  member     = "serviceAccount:${google_service_account.main.email}"
 }
 
-data "google_project" "main" {}
-
-resource "google_project_iam_member" "main" {
-  for_each = toset([
-    "roles/artifactregistry.reader",
-    "roles/storage.objectUser",
-    "roles/logging.logWriter",
-  ])
-  project = data.google_project.main.project_id
-  role    = each.key
-  member  = "serviceAccount:${google_service_account.main.email}"
-}
-
-### GCSFUSE BUCKET ###
+### BACKUP BUCKET ###
 resource "google_storage_bucket" "main" {
-  name                        = "${data.google_project.main.project_id}-soft-serve-gcsfuse"
+  name                        = "${data.google_project.main.project_id}-soft-serve-backup"
   location                    = "us-west1"
   uniform_bucket_level_access = true
-  hierarchical_namespace {
+  versioning {
     enabled = true
   }
+  lifecycle_rule {
+    condition {
+      num_newer_versions = 10
+    }
+    action {
+      type = "Delete"
+    }
+  }
+}
+
+resource "google_storage_bucket_iam_member" "main" {
+  bucket = google_storage_bucket.main.name
+  role   = "roles/storage.admin"
+  member = "serviceAccount:${google_service_account.main.email}"
 }
 
 ### COMPUTE INSTANCE ###
 module "gce-container" {
   source         = "terraform-google-modules/container-vm/google"
   version        = "3.2"
-  cos_image_name = "cos-stable-117-18613-164-28"
+  cos_image_name = "cos-stable-121-18867-90-77"
   container = {
     name  = "soft-serve"
     image = data.google_artifact_registry_docker_image.main.self_link
@@ -54,17 +70,26 @@ module "gce-container" {
         value = var.admin_ssh_key,
       },
       {
-        name  = "GCSFUSE_BUCKET",
+        name  = "SOFT_SERVE_GCS_BACKUP_BUCKET",
         value = google_storage_bucket.main.name,
       }
     ]
-    # https://docs.docker.com/engine/containers/run/#runtime-privilege-and-linux-capabilities
-    securityContext = {
-      privileged = true
-    }
+    volumeMounts = [
+      {
+        mountPath = "/soft-serve"
+        readOnly  = false
+      }
+    ]
     stdin = true
     tty   = true
   }
+  volumes = [
+    {
+      hostPath = {
+        path = "/home/soft-serve"
+      }
+    }
+  ]
   restart_policy = "Always"
 }
 

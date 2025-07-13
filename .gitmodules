@@ -1,0 +1,3 @@
+[submodule "soft-serve/docker/soft-serve"]
+	path = soft-serve/docker/soft-serve
+	url = https://github.com/feefs/soft-serve.git
