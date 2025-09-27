@@ -1,11 +1,40 @@
 #!/bin/bash
-# stdlib functions from
-# https://github.com/terraform-google-modules/terraform-google-startup-scripts/blob/main/files/startup-script-stdlib-body.sh
+# stdlib from
+# https://github.com/terraform-google-modules/terraform-google-startup-scripts/blob/main/files/startup-script-stdlib-head.sh
+export DEBUG=1
 
+# Set up port 23231 for gcloud compute ssh access
 stdlib::run_or_die sed -Ei \
   -e '0,/Port [0-9]+/ s/Port [0-9]+/Port 23231/' \
   -e 't' \
   -e '$a\\n# Soft Serve\nPort 23231' \
   /etc/ssh/sshd_config
-
 stdlib::run_or_die systemctl restart sshd.service
+
+# https://cloud.google.com/compute/docs/containers/migrate-containers#configure-internal-firewall
+# https://cloud.google.com/container-optimized-os/docs/how-to/firewall
+stdlib::run_or_die iptables -A INPUT -p tcp --dport 23231 -j ACCEPT
+
+# https://cloud.google.com/compute/docs/containers/migrate-containers#access-ar-images
+export HOME=/home/soft-serve
+stdlib::run_or_die docker-credential-gcr configure-docker --registries=${REGISTRY}
+
+# https://cloud.google.com/container-optimized-os/docs/concepts/disks-and-filesystem
+stdlib::run_or_die mkdir -p /mnt/stateful_partition/var/lib/soft-serve
+stdlib::run_or_die mkdir -p /var/lib/soft-serve
+stdlib::run_or_die mount --bind /mnt/stateful_partition/var/lib/soft-serve /var/lib/soft-serve
+stdlib::run_or_die mount -o remount,nosuid,nodev /mnt/stateful_partition/var/lib/soft-serve /var/lib/soft-serve
+
+CONTAINER_NAME="soft-serve"
+stdlib::cmd docker stop $CONTAINER_NAME
+stdlib::cmd docker rm $CONTAINER_NAME
+stdlib::run_or_die docker pull $IMAGE
+
+stdlib::run_or_die docker run \
+  --name $CONTAINER_NAME \
+  --detach --interactive --tty --restart=always \
+  --network host \
+  --mount type=bind,src=/var/lib/soft-serve,dst=/soft-serve \
+  --env SOFT_SERVE_INITIAL_ADMIN_KEYS="${SOFT_SERVE_INITIAL_ADMIN_KEYS}" \
+  --env SOFT_SERVE_GCS_BACKUP_BUCKET="${SOFT_SERVE_GCS_BACKUP_BUCKET}" \
+  $IMAGE

@@ -57,45 +57,20 @@ resource "google_storage_bucket_iam_member" "main" {
 }
 
 ### COMPUTE INSTANCE ###
-module "gce-container" {
-  source         = "terraform-google-modules/container-vm/google"
-  version        = "3.2"
-  cos_image_name = "cos-stable-121-18867-90-77"
-  container = {
-    name  = "soft-serve"
-    image = data.google_artifact_registry_docker_image.main.self_link
-    env = [
-      {
-        name  = "SOFT_SERVE_INITIAL_ADMIN_KEYS",
-        value = var.admin_ssh_key,
-      },
-      {
-        name  = "SOFT_SERVE_GCS_BACKUP_BUCKET",
-        value = google_storage_bucket.main.name,
-      }
-    ]
-    volumeMounts = [
-      {
-        mountPath = "/soft-serve"
-        readOnly  = false
-      }
-    ]
-    stdin = true
-    tty   = true
-  }
-  volumes = [
-    {
-      hostPath = {
-        path = "/home/soft-serve"
-      }
-    }
-  ]
-  restart_policy = "Always"
-}
-
 module "startup-scripts" {
   source  = "terraform-google-modules/startup-scripts/google"
   version = "2.0"
+}
+
+data "google_compute_image" "main" {
+  name    = "cos-stable-121-18867-90-77"
+  project = "cos-cloud"
+}
+
+resource "google_compute_address" "main" {
+  name         = "soft-serve-ip"
+  region       = "us-west1"
+  address_type = "EXTERNAL"
 }
 
 data "google_compute_subnetwork" "main" {
@@ -114,19 +89,13 @@ resource "google_compute_firewall" "main" {
   }
 }
 
-resource "google_compute_address" "main" {
-  name         = "soft-serve-ip"
-  region       = "us-west1"
-  address_type = "EXTERNAL"
-}
-
 resource "google_compute_instance" "main" {
   name         = "soft-serve"
   zone         = "us-west1-a"
   machine_type = "e2-micro"
   boot_disk {
     initialize_params {
-      image = module.gce-container.source_image
+      image = data.google_compute_image.main.self_link
     }
   }
   service_account {
@@ -140,12 +109,14 @@ resource "google_compute_instance" "main" {
     }
   }
   metadata = {
-    startup-script            = module.startup-scripts.content
-    startup-script-custom     = file("${path.module}/startup-script")
-    gce-container-declaration = module.gce-container.metadata_value
-    google-logging-enabled    = true
-  }
-  labels = {
-    container-vm = module.gce-container.vm_container_label
+    startup-script = module.startup-scripts.content
+    startup-script-config = templatefile("${path.module}/startup-script-config.tftpl", {
+      registry                      = "${google_artifact_registry_repository.main.location}-docker.pkg.dev"
+      image                         = data.google_artifact_registry_docker_image.main.self_link
+      soft_serve_initial_admin_keys = var.admin_ssh_key
+      soft_serve_gcs_backup_bucket  = google_storage_bucket.main.name
+    })
+    startup-script-custom  = file("${path.module}/startup-script")
+    google-logging-enabled = true
   }
 }
