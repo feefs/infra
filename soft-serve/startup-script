@@ -32,7 +32,7 @@ stdlib::run_or_die docker pull $IMAGE
 
 stdlib::run_or_die docker run \
   --name $CONTAINER_NAME \
-  --detach --interactive --tty --restart=always \
+  --detach --restart=always \
   --network host \
   --mount type=bind,src=/var/lib/soft-serve,dst=/soft-serve \
   --env SOFT_SERVE_INITIAL_ADMIN_KEYS="${SOFT_SERVE_INITIAL_ADMIN_KEYS}" \
