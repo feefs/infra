@@ -6,7 +6,7 @@ output "image_name" {
     "/",
     google_artifact_registry_repository.main.repository_id,
     "/",
-    google_artifact_registry_repository.main.name
+    local.docker_image_name
   ])
 }
 

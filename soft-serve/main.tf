@@ -1,3 +1,7 @@
+locals {
+  docker_image_name = "soft-serve-gcloud"
+}
+
 data "google_project" "main" {}
 
 ### IAM ###
@@ -17,12 +21,6 @@ resource "google_artifact_registry_repository" "main" {
   location      = "us-west1"
   repository_id = "soft-serve-gcloud"
   format        = "docker"
-}
-
-data "google_artifact_registry_docker_image" "main" {
-  location      = google_artifact_registry_repository.main.location
-  repository_id = google_artifact_registry_repository.main.repository_id
-  image_name    = "${google_artifact_registry_repository.main.name}:latest"
 }
 
 resource "google_artifact_registry_repository_iam_member" "main" {
@@ -56,7 +54,7 @@ resource "google_storage_bucket_iam_member" "main" {
   member = "serviceAccount:${google_service_account.main.email}"
 }
 
-### COMPUTE INSTANCE ###
+### COMPUTE INSTANCE###
 module "startup-scripts" {
   source  = "terraform-google-modules/startup-scripts/google"
   version = "2.0"
@@ -67,15 +65,21 @@ data "google_compute_image" "main" {
   project = "cos-cloud"
 }
 
-resource "google_compute_address" "main" {
-  name         = "soft-serve-ip"
-  region       = "us-west1"
-  address_type = "EXTERNAL"
+data "google_artifact_registry_docker_image" "main" {
+  location      = google_artifact_registry_repository.main.location
+  repository_id = google_artifact_registry_repository.main.repository_id
+  image_name    = "${local.docker_image_name}:latest"
 }
 
 data "google_compute_subnetwork" "main" {
   name   = "default"
   region = "us-west1"
+}
+
+resource "google_compute_address" "main" {
+  name         = "soft-serve-ip"
+  region       = "us-west1"
+  address_type = "EXTERNAL"
 }
 
 resource "google_compute_firewall" "main" {
