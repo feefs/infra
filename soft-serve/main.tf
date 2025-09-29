@@ -1,5 +1,6 @@
 locals {
   docker_image_name = "soft-serve-gcloud"
+  cos_image_name    = "cos-stable-121-18867-199-73"
 }
 
 data "google_project" "main" {}
@@ -61,7 +62,7 @@ module "startup-scripts" {
 }
 
 data "google_compute_image" "main" {
-  name    = "cos-stable-121-18867-90-77"
+  name    = local.cos_image_name
   project = "cos-cloud"
 }
 
