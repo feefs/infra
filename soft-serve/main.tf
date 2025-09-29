@@ -93,6 +93,13 @@ resource "google_compute_firewall" "main" {
   }
 }
 
+resource "google_compute_disk" "main" {
+  name = "soft-serve-data"
+  zone = "us-west1-a"
+  type = "pd-standard"
+  size = 10
+}
+
 resource "google_compute_instance" "main" {
   name         = "soft-serve"
   zone         = "us-west1-a"
@@ -101,6 +108,10 @@ resource "google_compute_instance" "main" {
     initialize_params {
       image = data.google_compute_image.main.self_link
     }
+  }
+  attached_disk {
+    source      = google_compute_disk.main.self_link
+    device_name = "soft-serve-data"
   }
   service_account {
     email  = google_service_account.main.email
@@ -115,6 +126,7 @@ resource "google_compute_instance" "main" {
   metadata = {
     startup-script = module.startup-scripts.content
     startup-script-config = templatefile("${path.module}/startup-script-config.tftpl", {
+      disk_device_name              = "soft-serve-data"
       registry                      = "${google_artifact_registry_repository.main.location}-docker.pkg.dev"
       image                         = data.google_artifact_registry_docker_image.main.self_link
       soft_serve_initial_admin_keys = var.admin_ssh_key

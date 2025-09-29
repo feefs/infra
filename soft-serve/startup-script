@@ -19,22 +19,28 @@ stdlib::run_or_die iptables -A INPUT -p tcp --dport 23231 -j ACCEPT
 export HOME=/home/soft-serve
 stdlib::run_or_die docker-credential-gcr configure-docker --registries=${REGISTRY}
 
+# https://cloud.google.com/compute/docs/containers/migrate-containers#mount-disk
 # https://cloud.google.com/container-optimized-os/docs/concepts/disks-and-filesystem
-stdlib::run_or_die mkdir -p /mnt/stateful_partition/var/lib/soft-serve
-stdlib::run_or_die mkdir -p /var/lib/soft-serve
-stdlib::run_or_die mount --bind /mnt/stateful_partition/var/lib/soft-serve /var/lib/soft-serve
-stdlib::run_or_die mount -o remount,nosuid,nodev /mnt/stateful_partition/var/lib/soft-serve /var/lib/soft-serve
+disk_by_id_path="/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
+host_mount_point="/mnt/disks/soft-serve-data"
+container_mount_path="/soft-serve"
+set -x
+file -sL $disk_by_id_path | grep -q filesystem || \
+        mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard $disk_by_id_path
+set +x
+stdlib::run_or_die mkdir -p "${host_mount_point}"
+stdlib::run_or_die mount -o defaults,discard "${disk_by_id_path}" "${host_mount_point}"
 
-CONTAINER_NAME="soft-serve"
-stdlib::cmd docker stop $CONTAINER_NAME
-stdlib::cmd docker rm $CONTAINER_NAME
+container_name="soft-serve"
+stdlib::cmd docker stop $container_name
+stdlib::cmd docker rm $container_name
 stdlib::run_or_die docker pull $IMAGE
 
 stdlib::run_or_die docker run \
-  --name $CONTAINER_NAME \
+  --name $container_name \
   --detach --restart=always \
   --network host \
-  --mount type=bind,src=/var/lib/soft-serve,dst=/soft-serve \
+  --mount type=bind,src=${host_mount_point},dst=${container_mount_path} \
   --env SOFT_SERVE_INITIAL_ADMIN_KEYS="${SOFT_SERVE_INITIAL_ADMIN_KEYS}" \
   --env SOFT_SERVE_GCS_BACKUP_BUCKET="${SOFT_SERVE_GCS_BACKUP_BUCKET}" \
   $IMAGE
