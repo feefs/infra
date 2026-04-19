@@ -1,9 +1,11 @@
 FROM alpine:latest AS base
 RUN apk add --update curl bash python3
-RUN set -o pipefail && curl -sSL https://sdk.cloud.google.com | bash
+RUN set -o pipefail \
+  && curl -sSL https://sdk.cloud.google.com | bash \
+  && /root/google-cloud-sdk/bin/gcloud components remove bq gsutil --quiet
 ENV PATH="$PATH:/root/google-cloud-sdk/bin"
 
-FROM golang:1.24.0-alpine AS build
+FROM golang:1.26.2-alpine AS build
 WORKDIR /build
 COPY soft-serve/go.mod soft-serve/go.sum .
 RUN go mod download
