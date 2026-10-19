@@ -5,7 +5,7 @@ RUN set -o pipefail \
   && /root/google-cloud-sdk/bin/gcloud components remove bq gsutil --quiet
 ENV PATH="$PATH:/root/google-cloud-sdk/bin"
 
-FROM golang:1.26.2-alpine AS build
+FROM golang:1.27.2-alpine AS build
 WORKDIR /build
 COPY soft-serve/go.mod soft-serve/go.sum .
 RUN go mod download

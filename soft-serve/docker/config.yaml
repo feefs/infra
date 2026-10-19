@@ -39,40 +39,65 @@ ssh:
 git:
   # Enable the Git daemon.
   enabled: false
-#   # The address on which the Git daemon will listen.
-#   listen_addr: ":9418"
-#   # The public URL of the Git daemon server.
-#   # This is the address that will be used to clone repositories.
-#   public_url: "git://localhost"
-#   # The maximum number of seconds a connection can take.
-#   # A value of 0 means no timeout.
-#   max_timeout: 0
-#   # The number of seconds a connection can be idle before it is closed.
-#   idle_timeout: 3
-#   # The maximum number of concurrent connections.
-#   max_connections: 32
+  # # The address on which the Git daemon will listen.
+  # listen_addr: ":9418"
+  # # The public URL of the Git daemon server.
+  # # This is the address that will be used to clone repositories.
+  # public_url: "git://localhost"
+  # # The maximum number of seconds a connection can take.
+  # # A value of 0 means no timeout.
+  # max_timeout: 0
+  # # The number of seconds a connection can be idle before it is closed.
+  # idle_timeout: 3
+  # # The maximum number of concurrent connections.
+  # max_connections: 32
 
 # The HTTP server configuration.
 http:
   # Enable the HTTP server.
   enabled: false
-#   # The address on which the HTTP server will listen.
-#   listen_addr: ":23232"
-#   # The path to the TLS private key.
-#   tls_key_path: 
-#   # The path to the TLS certificate.
-#   tls_cert_path: 
-#   # The public URL of the HTTP server.
-#   # This is the address that will be used to clone repositories.
-#   # Make sure to use https:// if you are using TLS.
-#   public_url: "http://localhost:23232"
+  # # The address on which the HTTP server will listen.
+  # listen_addr: ":23232"
+  # # The path to the TLS private key.
+  # tls_key_path: ""
+  # # The path to the TLS certificate.
+  # tls_cert_path: ""
+  # # The public URL of the HTTP server.
+  # # This is the address that will be used to clone repositories.
+  # # Make sure to use https:// if you are using TLS.
+  # public_url: "http://localhost:23232"
+  # # The cross-origin request security options
+  # cors:
+  #   # The allowed cross-origin headers
+  #   allowed_headers:
+  #     - "Accept"
+  #     - "Accept-Language"
+  #     - "Content-Language"
+  #     - "Content-Type"
+  #     - "Origin"
+  #     - "X-Requested-With"
+  #     - "User-Agent"
+  #     - "Authorization"
+  #     - "Access-Control-Request-Method"
+  #     - "Access-Control-Allow-Origin"
+  #   # The allowed cross-origin URLs
+  #   allowed_origins:
+  #     - "http://localhost:23232" # always allowed
+  #     # - "https://example.com"
+  #   # The allowed cross-origin methods
+  #   allowed_methods:
+  #     - "GET"
+  #     - "HEAD"
+  #     - "POST"
+  #     - "PUT"
+  #     - "OPTIONS"
 
 # The stats server configuration.
 stats:
   # Enable the stats server.
   enabled: false
-#   # The address on which the stats server will listen.
-#   listen_addr: "localhost:23233"
+  # # The address on which the stats server will listen.
+  # listen_addr: "localhost:23233"
 
 # The database configuration.
 db:
@@ -88,8 +113,8 @@ db:
 lfs:
   # Enable Git LFS.
   enabled: false
-#   # Enable Git SSH transfer.
-#   ssh_enabled: false
+  # # Enable Git SSH transfer.
+  # ssh_enabled: false
 
 # Cron job configuration
 jobs:
@@ -99,3 +124,7 @@ jobs:
 # Additional admin keys.
 # initial_admin_keys:
 #  - "ssh-rsa AAAAB3NzaC1yc2..."
+
+# Name of a repository to create automatically on boot if it doesn't already
+# exist. Empty disables this behavior.
+#default_repo: ""
