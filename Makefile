@@ -21,6 +21,9 @@ test_soft_serve:
 	-docker stop $(TEST_CONTAINER_NAME)
 	docker run --rm --detach \
 		--name $(TEST_CONTAINER_NAME) \
+		--user "$$(id -u):$$(id -g)" \
+		--env HOME=/tmp \
+		--cap-drop=ALL \
 		--security-opt=no-new-privileges:true \
 		--publish 127.0.0.1:23231:23231 \
 		--volume "$(CURDIR)/data:/soft-serve" \
@@ -29,10 +32,7 @@ test_soft_serve:
 
 clean:
 	docker stop $(TEST_CONTAINER_NAME)
-	docker run --rm \
-		--volume "$(CURDIR):/workspace" \
-		--entrypoint sh \
-		$(TEST_IMAGE_NAME) -c "rm -rf /workspace/data"
+	rm -rf "$(CURDIR)/data"
 	docker image rm $(TEST_IMAGE_NAME)
 
 prune: clean

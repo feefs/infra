@@ -19,7 +19,7 @@ ssh:
   # Enable SSH.
   enabled: true
   # The address on which the SSH server will listen.
-  listen_addr: ":22"
+  listen_addr: ":23231"
   # The public URL of the SSH server.
   # This is the address that will be used to clone repositories.
   public_url: "ssh://git.feefs.dev"

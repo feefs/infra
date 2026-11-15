@@ -36,6 +36,7 @@ set +x
 stdlib::run_or_die mkdir -p "${host_mount_point}"
 stdlib::cmd mountpoint -q "${host_mount_point}" || \
   stdlib::run_or_die mount -o defaults,discard "${disk_by_id_path}" "${host_mount_point}"
+stdlib::run_or_die chown -R 10001:10001 "${host_mount_point}"
 
 container_name="soft-serve"
 stdlib::cmd docker stop "${container_name}"
@@ -45,7 +46,13 @@ stdlib::run_or_die docker pull "${IMAGE}"
 stdlib::run_or_die docker run \
   --name "${container_name}" \
   --detach --restart=always \
-  --network host \
+  --publish 22:23231 \
+  --user 10001:10001 \
+  --cap-drop=ALL \
+  --security-opt=no-new-privileges:true \
+  --read-only \
+  --tmpfs /tmp:rw,noexec,nosuid,size=64m \
+  --tmpfs /home/softserve:rw,noexec,nosuid,uid=10001,gid=10001,mode=0700,size=64m \
   --mount "type=bind,src=${host_mount_point},dst=${container_mount_path}" \
   --env "SOFT_SERVE_INITIAL_ADMIN_KEYS=${SOFT_SERVE_INITIAL_ADMIN_KEYS}" \
   --env "SOFT_SERVE_GCS_BACKUP_BUCKET=${SOFT_SERVE_GCS_BACKUP_BUCKET}" \

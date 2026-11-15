@@ -22,17 +22,22 @@ RUN go install ./cmd/soft
 FROM base AS test
 COPY --from=build /go/bin/soft /usr/local/bin/soft
 RUN apk add --no-cache git openssh-client-default
+RUN addgroup -g 10001 -S softserve \
+  && adduser -u 10001 -S -G softserve -h /home/softserve softserve \
+  && install -d -m 0755 -o 10001 -g 10001 /soft-serve \
+  && install -d -m 0755 /etc/soft-serve
 
 WORKDIR /soft-serve
 ENV SOFT_SERVE_DATA_PATH="/soft-serve"
 ENV SOFT_SERVE_INITIAL_ADMIN_KEYS=""
 ENV SOFT_SERVE_GCS_BACKUP_BUCKET=""
-EXPOSE 22
+EXPOSE 23231
 
-COPY test-config.yaml /root/config.yaml
-COPY --chmod=0755 entrypoint.sh /root
+COPY --chmod=0644 test-config.yaml /etc/soft-serve/config.yaml
+COPY --chmod=0755 entrypoint.sh /usr/local/bin/entrypoint.sh
 
-ENTRYPOINT ["/root/entrypoint.sh"]
+USER 10001:10001
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 FROM test AS final
-COPY config.yaml /root/config.yaml
+COPY --chmod=0644 config.yaml /etc/soft-serve/config.yaml

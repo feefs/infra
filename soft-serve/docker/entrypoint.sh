@@ -1,6 +1,6 @@
 #!/bin/sh
 set -eux
-cp /root/config.yaml "${SOFT_SERVE_DATA_PATH}/config.yaml"
+cp /etc/soft-serve/config.yaml "${SOFT_SERVE_DATA_PATH}/config.yaml"
 mkdir -p ${SOFT_SERVE_DATA_PATH}/bundles
 
 NO_COLOR=1 exec /usr/local/bin/soft serve 2>&1
