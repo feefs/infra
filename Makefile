@@ -21,7 +21,8 @@ test_soft_serve:
 	-docker stop $(TEST_CONTAINER_NAME)
 	docker run --rm --detach \
 		--name $(TEST_CONTAINER_NAME) \
-		--publish 23231:23231 \
+		--security-opt=no-new-privileges:true \
+		--publish 127.0.0.1:23231:23231 \
 		--volume "$(CURDIR)/data:/soft-serve" \
 		--env SOFT_SERVE_INITIAL_ADMIN_KEYS="$(SOFT_SERVE_INITIAL_ADMIN_KEYS)" \
 		$(TEST_IMAGE_NAME)
