@@ -6,7 +6,7 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = "8.7.0"
+      version = "8.11.0"
     }
   }
   backend "gcs" {
@@ -24,6 +24,8 @@ resource "google_project_service" "project" {
     "compute.googleapis.com",
     "storage-component.googleapis.com",
     "logging.googleapis.com",
+    "oslogin.googleapis.com",
+    "iap.googleapis.com",
   ])
   service            = each.key
   disable_on_destroy = false

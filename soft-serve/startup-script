@@ -4,20 +4,25 @@
 export DEBUG=1
 
 # Set up port 23231 for gcloud compute ssh access
-stdlib::run_or_die sed -Ei \
-  -e '0,/Port [0-9]+/ s/Port [0-9]+/Port 23231/' \
-  -e 't' \
-  -e '$a\\n# Soft Serve\nPort 23231' \
-  /etc/ssh/sshd_config
+sshd_tmp="$(stdlib::mktemp)"
+# Prepend Port 23231 (ahead of any Match blocks) and strip existing active Port lines
+{
+  echo "Port 23231"
+  grep -Ev '^[[:space:]]*Port[[:space:]]+' /etc/ssh/sshd_config || true
+} > "${sshd_tmp}"
+# Validate sshd_config syntax before overwriting the live file
+stdlib::run_or_die sshd -t -f "${sshd_tmp}"
+stdlib::run_or_die cp "${sshd_tmp}" /etc/ssh/sshd_config
 stdlib::run_or_die systemctl restart sshd.service
 
 # https://cloud.google.com/compute/docs/containers/migrate-containers#configure-internal-firewall
 # https://cloud.google.com/container-optimized-os/docs/how-to/firewall
-stdlib::run_or_die iptables -A INPUT -p tcp --dport 23231 -j ACCEPT
+stdlib::cmd iptables -C INPUT -p tcp --dport 23231 -j ACCEPT || \
+  stdlib::run_or_die iptables -A INPUT -p tcp --dport 23231 -j ACCEPT
 
 # https://cloud.google.com/compute/docs/containers/migrate-containers#access-ar-images
 export HOME=/home/soft-serve
-stdlib::run_or_die docker-credential-gcr configure-docker --registries=${REGISTRY}
+stdlib::run_or_die docker-credential-gcr configure-docker --registries="${REGISTRY}"
 
 # https://cloud.google.com/compute/docs/containers/migrate-containers#mount-disk
 # https://cloud.google.com/container-optimized-os/docs/concepts/disks-and-filesystem
@@ -25,22 +30,23 @@ disk_by_id_path="/dev/disk/by-id/google-${DISK_DEVICE_NAME}"
 host_mount_point="/mnt/disks/soft-serve-data"
 container_mount_path="/soft-serve"
 set -x
-file -sL $disk_by_id_path | grep -q filesystem || \
-        mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard $disk_by_id_path
+file -sL "${disk_by_id_path}" | grep -q filesystem || \
+  stdlib::run_or_die mkfs.ext4 -m 0 -E lazy_itable_init=0,lazy_journal_init=0,discard "${disk_by_id_path}"
 set +x
 stdlib::run_or_die mkdir -p "${host_mount_point}"
-stdlib::run_or_die mount -o defaults,discard "${disk_by_id_path}" "${host_mount_point}"
+stdlib::cmd mountpoint -q "${host_mount_point}" || \
+  stdlib::run_or_die mount -o defaults,discard "${disk_by_id_path}" "${host_mount_point}"
 
 container_name="soft-serve"
-stdlib::cmd docker stop $container_name
-stdlib::cmd docker rm $container_name
-stdlib::run_or_die docker pull $IMAGE
+stdlib::cmd docker stop "${container_name}"
+stdlib::cmd docker rm "${container_name}"
+stdlib::run_or_die docker pull "${IMAGE}"
 
 stdlib::run_or_die docker run \
-  --name $container_name \
+  --name "${container_name}" \
   --detach --restart=always \
   --network host \
-  --mount type=bind,src=${host_mount_point},dst=${container_mount_path} \
-  --env SOFT_SERVE_INITIAL_ADMIN_KEYS="${SOFT_SERVE_INITIAL_ADMIN_KEYS}" \
-  --env SOFT_SERVE_GCS_BACKUP_BUCKET="${SOFT_SERVE_GCS_BACKUP_BUCKET}" \
-  $IMAGE
+  --mount "type=bind,src=${host_mount_point},dst=${container_mount_path}" \
+  --env "SOFT_SERVE_INITIAL_ADMIN_KEYS=${SOFT_SERVE_INITIAL_ADMIN_KEYS}" \
+  --env "SOFT_SERVE_GCS_BACKUP_BUCKET=${SOFT_SERVE_GCS_BACKUP_BUCKET}" \
+  "${IMAGE}"
