@@ -90,6 +90,10 @@ data "google_artifact_registry_docker_image" "main" {
   image_name    = "${local.docker_image_name}:latest"
 }
 
+data "google_netblock_ip_ranges" "iap_forwarders" {
+  range_type = "iap-forwarders"
+}
+
 resource "google_compute_network" "main" {
   name                    = "soft-serve-vpc"
   auto_create_subnetworks = false
@@ -122,7 +126,7 @@ resource "google_compute_firewall" "git_ssh" {
 resource "google_compute_firewall" "host_ssh_iap" {
   name                    = "allow-soft-serve-host-ssh-iap"
   network                 = google_compute_network.main.id
-  source_ranges           = ["35.235.240.0/20"]
+  source_ranges           = data.google_netblock_ip_ranges.iap_forwarders.cidr_blocks_ipv4
   target_service_accounts = [google_service_account.main.email]
   allow {
     protocol = "tcp"
